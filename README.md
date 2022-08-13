@@ -8,3 +8,4 @@ View R codes: https://htmlpreview.github.io/?https://github.com/Akzh00/uber-data
 Files:
 - Uber.Rmd: rmd file showing data analysis
 - Uber.nb.html: html file showing data analysis
+- README.md: read me file
