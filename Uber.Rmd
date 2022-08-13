@@ -1,0 +1,151 @@
+---
+output:
+  pdf_document: default
+  html_notebook: default
+  html_document: default
+---
+# Import library
+
+```{r}
+library(ggplot2)
+library(ggthemes)
+library(lubridate)
+library(dplyr)
+library(tidyr)
+library(DT)
+library(scales)
+```
+
+# Read data
+```{r}
+apr_data <- read.csv("uber-raw-data-apr14.csv")
+may_data <- read.csv("uber-raw-data-may14.csv")
+jun_data <- read.csv("uber-raw-data-jun14.csv")
+jul_data <- read.csv("uber-raw-data-jul14.csv")
+aug_data <- read.csv("uber-raw-data-aug14.csv")
+sep_data <- read.csv("uber-raw-data-sep14.csv")
+
+data_2014 <- rbind(apr_data,may_data, jun_data, jul_data, aug_data, sep_data)
+```
+
+# Format date & time
+```{r}
+data_2014$Date.Time <- as.POSIXct(data_2014$Date.Time, format = "%m/%d/%Y %H:%M:%S")
+data_2014$Date.Time <- ymd_hms(data_2014$Date.Time)
+
+data_2014$Time <- format(data_2014$Date.Time, format="%H:%M:%S")
+```
+
+```{r}
+data_2014$day <- factor(day(data_2014$Date.Time))
+data_2014$month <- factor(month(data_2014$Date.Time, label = TRUE))
+data_2014$year <- factor(year(data_2014$Date.Time))
+data_2014$dayofweek <- factor(wday(data_2014$Date.Time, label = TRUE))
+
+data_2014$hour <- factor(hour(hms(data_2014$Time)))
+data_2014$minute <- factor(minute(hms(data_2014$Time)))
+data_2014$second <- factor(second(hms(data_2014$Time)))
+```
+
+# Analyse data
+```{r}
+hour_data <- data_2014 %>%
+  group_by(hour) %>%
+    summarize(Total = n()) 
+datatable(hour_data)
+```
+
+```{r}
+month_hour <- data_2014 %>%
+  group_by(month, hour) %>%
+    summarize(Total = n())
+```
+
+```{r}
+ggplot(month_hour, aes(hour, Total, fill = month)) +
+  geom_bar(stat = 'identity') +
+    ggtitle('Trip by hour and month') +
+      scale_y_continuous()
+```
+
+```{r}
+day_group <- data_2014 %>%
+  group_by(day) %>%
+    summarize(Total = n()) 
+```
+
+```{r}
+ggplot(day_group, aes(day, Total)) + 
+  geom_bar( stat = "identity", fill = 'lightblue') +
+    ggtitle("Trips by day") +
+      scale_y_continuous()
+```
+
+```{r}
+month_group <- data_2014 %>%
+  group_by(month) %>%
+    summarize(Total = n()) 
+```
+
+```{r}
+colors = c("#CC1011", "#665555", "#05a399", "#cfcaca", "#f5e840", "#0683c9", "#e075b0")
+
+ggplot(month_group , aes(month, Total, fill = month)) + 
+  geom_bar( stat = "identity") +
+    ggtitle("Trips by month") +
+      theme(legend.position = "none") +
+        scale_y_continuous() +
+          scale_fill_manual(values = colors)
+```
+
+```{r}
+month_weekday <- data_2014 %>%
+  group_by(month, dayofweek) %>%
+    summarize(Total = n())
+```
+
+```{r}
+ggplot(month_weekday, aes(month, Total, fill = dayofweek)) + 
+  geom_bar( stat = "identity", position = "dodge") +
+    ggtitle("Trips by day and month") +
+      scale_y_continuous() +
+        scale_fill_manual(values = colors)
+```
+
+```{r}
+ggplot(data_2014, aes(Base)) + 
+  geom_bar(fill = "lightblue") +
+    scale_y_continuous() +
+      ggtitle("Trips by bases")
+```
+
+```{r}
+day_and_hour <- data_2014 %>%
+  group_by(day, hour) %>%
+    summarize(Total = n())
+```
+
+```{r}
+ggplot(day_and_hour, aes(day, hour, fill = Total)) +
+  geom_tile(color = "white") +
+    ggtitle("Heatmap by hour and day")
+```
+
+```{r}
+dayofweek_bases <- data_2014 %>%
+  group_by(Base, dayofweek) %>%
+    summarize(Total = n()) 
+```
+
+```{r}
+ggplot(dayofweek_bases, aes(Base, dayofweek, fill = Total)) +
+  geom_tile(color = "white") +
+    ggtitle("Heatmap by bases and day of week")
+```
+
+```{r}
+ggplot(data_2014, aes(x=Lon, y=Lat, color = Base)) +
+  geom_point(size=1) +
+    theme_map() +
+      ggtitle("UBER Rides (APR-SEP) by Base")
+```
